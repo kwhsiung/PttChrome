@@ -109,11 +109,13 @@ module.exports = {
   ]),
   devServer: {
     contentBase: path.join(__dirname, './dist'),
+    // NOTE: 設定當連線到 localhost:8080/bbs 時，其實是連線到 https://ws.ptt.cc/bbs
+    // https://webpack.js.org/configuration/dev-server/#devserver-proxy
     proxy: {
       '/bbs': {
         target: 'https://ws.ptt.cc',
         secure: true,
-        ws: true,
+        ws: true, // https://github.com/chimurai/http-proxy-middleware#websocket
         changeOrigin: true,
         onProxyReqWs(proxyReq) {
           // Whitelist does not accept ws.ptt.cc

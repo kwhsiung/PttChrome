@@ -1,5 +1,7 @@
 export function Event() {}
 
+// 為 obj 加上三個 event methods: addEventListener, dispatchEvent, removeEventListener
+// 以上三個 event methods 都會為 obj 建立一個內部 property 稱為 _listeners
 Event.mixin = function(obj) {
   for (var key in Event.prototype) {
     obj[key] = Event.prototype[key];

@@ -162,15 +162,19 @@ export const App = function(options) {
   }
 };
 
+// 就是判斷有沒有連線吧？
 App.prototype.isConnected = function() {
   return this.connectState == 1 && !!this.conn;
 };
 
+// 就是連線
 App.prototype.connect = function(url) {
   this.connectState = 0;
   console.log('connect: ' + url);
 
   var parsed = this._parseURLSimple(url);
+  console.log('parsed:');
+  console.log(parsed);
   if (parsed.protocol == 'wsstelnet') {
     this._setupWebsocketConn('wss://' + parsed.hostname + parsed.path);
   } else if (parsed.protocol == 'wstelnet') {
@@ -188,6 +192,7 @@ App.prototype.connect = function(url) {
   };
 };
 
+// 透過 url 解析出 protocol, hostname, host, port, path 的 function
 App.prototype._parseURLSimple = function(url) {
   var protocol = url.split(/:\/\//, 2);
   if (protocol.length != 2)
@@ -211,14 +216,26 @@ App.prototype._parseURLSimple = function(url) {
   };
 };
 
+// 建立一個過 Websocket 走 telnet 協定的連線（參考 telnet.js），但還沒有將這個連線 attach 上 App
+// 為什麼還要再包一層 TelnetConnection？
+// 目前的理解大概是：
+// 1. 裏層 Websocket 負責直接跟 ptt.cc communication
+// 2. 然後外層包一個 TelnetConnection 在 send/receive req/res 前先解析各種 telnet commands（譬如要先 convSend 才會真正的做 Websocket send），以及 handle 到 Websocket 所發出的 event
 App.prototype._setupWebsocketConn = function(url) {
+  // url probably will be proxy here: ws://localhost:8080/bbs => ws://ws.ptt.cc/bbs (with origin changed)
   var wsConn = new Websocket(url);
+
+  // new TelnetConnection(wsConn): 白話文，過 Websocket 走 telnet 協定
   this._attachConn(new TelnetConnection(wsConn));
 };
 
+// Attach 連線給 App，然後順便加上 event listeners，這些都是從 TelnetConnection 發 CustomEvent 出來的，並且是由更上一層的 Websocket event 觸發的（參考 telnet.js）
 App.prototype._attachConn = function(conn) {
   var self = this;
   this.conn = conn;
+
+  // receive by this.dispatchEvent(new CustomEvent('xxx'));
+  // 這些都是從 TelnetConnection 發 customevent 出來的，並且是由更上一層的 Websocket event 觸發的（參考 telnet.js）
   this.conn.addEventListener('open', this.onConnect.bind(this));
   this.conn.addEventListener('close', this.onClose.bind(this));
   this.conn.addEventListener('data', function(e) {
@@ -226,18 +243,34 @@ App.prototype._attachConn = function(conn) {
   });
 };
 
+// 當連接上的時候
 App.prototype.onConnect = function() {
   this.conn.isConnected = true;
+
+  // 設定好 connection 給 termView，沒有很複雜，也只是提供 termView 內部可以直接從 this.conn 做 send, convSend
   this.view.setConn(this.conn);
+  
   console.info("pttchrome onConnect");
+
   this.connectState = 1;
+
+  // 換 favicon
   this.updateTabIcon('connect');
+
+  // 防閒置用的
   this.idleTime = 0;
+
+  // 設置每秒會執行一次的 methods：
+  // 1. 防閒置機制
+  // 2. 游標閃爍
+  // 3. 
   var self = this;
-  this.timerEverySec = setTimer(true, function() {
+  this.timerEverySec = setTimer(true/*repeat*/, function() {
     self.antiIdle();
     self.view.onBlink();
-    self.incrementCountToUpdatePushthread();
+
+    // TODO: 這個每秒會執行一次？是啥鬼
+    // self.incrementCountToUpdatePushthread();
   }, 1000);
 };
 
@@ -471,6 +504,7 @@ App.prototype.doOpenUrlNewTab = function(a) {
   a.dispatchEvent(e);
 };
 
+// TODO: 這個每秒會執行一次？是啥鬼
 App.prototype.incrementCountToUpdatePushthread = function(interval) {
   if (this.maxPushthreadAutoUpdateCount == -1) {
     this.pushthreadAutoUpdateCount = 0;
@@ -517,10 +551,14 @@ App.prototype.switchMouseBrowsing = function() {
   }
 };
 
+// 「需要防閒置的時候」，透過 send ANTI_IDLE_STR 達到防閒置
 App.prototype.antiIdle = function() {
+  // TODO: 什麼時候 this.antiIdleTime && this.idleTime > this.antiIdleTime 會成立？
   if (this.antiIdleTime && this.idleTime > this.antiIdleTime) {
     if (this.connectState == 1) {
+      console.log('send ANTI_IDLE_STR');
       this.conn.send(ANTI_IDLE_STR);
+      console.log(ANTI_IDLE_STR);
       this.idleTime = 0;
     }
   } else {
@@ -529,6 +567,7 @@ App.prototype.antiIdle = function() {
   }
 };
 
+// 換 favicon 的 method
 App.prototype.updateTabIcon = function(aStatus) {
   var icon = require('../icon/logo.png');
   switch (aStatus) {

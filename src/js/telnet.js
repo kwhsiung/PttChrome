@@ -40,7 +40,7 @@ const STATE_DO=4;
 const STATE_DONT=5;
 const STATE_SB=6;
 
-export function TelnetConnection(socket) {
+export function TelnetConnection(socket) { // socket here is new Websocket(url)
   this.socket = socket;
   this.socket.addEventListener('open', this._onOpen.bind(this));
   this.socket.addEventListener('data', this._onDataAvailable.bind(this));
@@ -52,16 +52,23 @@ export function TelnetConnection(socket) {
   this.termType = 'VT100';
 }
 
+// 為 TelnetConnection.prototype 加上三個 methods: addEventListener, dispatchEvent, removeEventListener 及一個內部 property: _listeners
+// 因為我們自創的 TelnetConnection 並沒有像 Websocket 有內建以上三個 methods
+// pttchrome.js 中會用到 addEventListener open, close, data
 Event.mixin(TelnetConnection.prototype);
 
+// 負責送出 CustomEvent: open
 TelnetConnection.prototype._onOpen = function(e) {
+  // https://developer.mozilla.org/zh-TW/docs/Web/API/CustomEvent/CustomEvent
   this.dispatchEvent(new CustomEvent('open'));
 };
 
+// 負責送出 CustomEvent: close
 TelnetConnection.prototype._onClose = function(e) {
   this.dispatchEvent(new CustomEvent('close'));
 };
 
+// TODO: 應該是送出 CustomData: data 之前先做一些「處理」
 TelnetConnection.prototype._onDataAvailable = function(e) {
   var str = e.detail.data;
   var data='';
@@ -160,6 +167,7 @@ TelnetConnection.prototype._onDataAvailable = function(e) {
   }
 };
 
+// 負責送出 CustomEvent: data
 TelnetConnection.prototype._dispatchData = function(data) {
   this.dispatchEvent(new CustomEvent('data', {
     detail: {
@@ -168,6 +176,7 @@ TelnetConnection.prototype._dispatchData = function(data) {
   }));
 };
 
+// 送 request
 TelnetConnection.prototype.send = function(str) {
   // XXX Should do escape on IAC.
   this._sendRaw(str);

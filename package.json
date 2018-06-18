@@ -36,8 +36,14 @@
     "webpack-dev-server": "^2.9.3"
   },
   "lint-staged": {
-    "*.json": ["prettier --write", "git add"],
-    "src/components/**/*.{js,json,css}": ["prettier --write", "git add"]
+    "*.json": [
+      "prettier --write",
+      "git add"
+    ],
+    "src/components/**/*.{js,json,css}": [
+      "prettier --write",
+      "git add"
+    ]
   },
   "babel": {
     "env": {
@@ -49,7 +55,9 @@
               "modules": false
             }
           ],
-          ["react"]
+          [
+            "react"
+          ]
         ],
         "plugins": [
           "syntax-dynamic-import",
@@ -65,7 +73,9 @@
               "modules": false
             }
           ],
-          ["react"]
+          [
+            "react"
+          ]
         ],
         "plugins": [
           "syntax-dynamic-import",

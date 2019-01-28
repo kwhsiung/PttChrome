@@ -4,6 +4,8 @@ import { Event } from './event';
 import { u2b, ansiHalfColorConv } from './string_util';
 
 // Telnet commands
+// https://tools.ietf.org/html/rfc854
+// \x 是 hex 的意思，可能是因為 ptt 是用 C 寫的，所以用 C 看得懂的方式送 command 
 const SE = '\xf0';
 const NOP = '\xf1';
 const DATA_MARK = '\xf2';
@@ -57,6 +59,7 @@ export function TelnetConnection(socket) { // socket here is new Websocket(url)
 // pttchrome.js 中會用到 addEventListener open, close, data
 Event.mixin(TelnetConnection.prototype);
 
+//#region socket events handlers
 // 負責送出 CustomEvent: open
 TelnetConnection.prototype._onOpen = function(e) {
   // https://developer.mozilla.org/zh-TW/docs/Web/API/CustomEvent/CustomEvent
@@ -68,7 +71,9 @@ TelnetConnection.prototype._onClose = function(e) {
   this.dispatchEvent(new CustomEvent('close'));
 };
 
-// TODO: 應該是送出 CustomData: data 之前先做一些「處理」
+//#region NOTE: on socket event: data event handlers
+// TODO: 應該是送出 CustomEvent: data 之前先做一些「處理」
+// http://140.134.131.145/upload/paper_uni/922pdf/4d/922014.pdf
 TelnetConnection.prototype._onDataAvailable = function(e) {
   var str = e.detail.data;
   var data='';
@@ -175,8 +180,11 @@ TelnetConnection.prototype._dispatchData = function(data) {
     }
   }));
 };
+//#endregion
+//#endregion
 
-// 送 request
+//#region NOTE: send 資料，有分 raw 或 conv
+// 直接送 hex code request
 TelnetConnection.prototype.send = function(str) {
   // XXX Should do escape on IAC.
   this._sendRaw(str);
@@ -188,6 +196,7 @@ TelnetConnection.prototype._sendRaw = function(data) {
   }
 }
 
+// 送 utf8 request
 TelnetConnection.prototype.convSend = function(unicode_str) {
   // supports UAO
   // when converting unicode to big5, use UAO.
@@ -199,6 +208,7 @@ TelnetConnection.prototype.convSend = function(unicode_str) {
     this._sendRaw(s);
   }
 };
+//#endregion
 
 TelnetConnection.prototype.sendNaws = function(cols, rows) {
   var nawsStr = String.fromCharCode(Math.floor(cols/256), cols%256, Math.floor(rows/256), rows%256).replace(/(\xff)/g,'\xff\xff');

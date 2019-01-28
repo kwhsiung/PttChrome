@@ -1,5 +1,7 @@
 import { Event } from './event';
 
+const debug = require('debug')('js:websocket.js')
+
 export function Websocket(url) {
   this._conn = new WebSocket(url);
   this._conn.binaryType = "arraybuffer";
@@ -12,10 +14,12 @@ export function Websocket(url) {
 Event.mixin(Websocket.prototype);
 
 Websocket.prototype._onOpen = function(e) {
+  debug('onOpen')
   this.dispatchEvent(new CustomEvent('open'));
 };
 
 Websocket.prototype._onMessage = function(e) {
+  debug('onMessage')
   var data = new Uint8Array(e.data);
   this.dispatchEvent(new CustomEvent('data', {
     detail: {
@@ -25,10 +29,12 @@ Websocket.prototype._onMessage = function(e) {
 };
 
 Websocket.prototype._onError = function(e) {
+  debug('onError')
   this.dispatchEvent(new CustomEvent('error'));
 };
 
 Websocket.prototype._onClose = function(e) {
+  debug('onClose')
   this.dispatchEvent(new CustomEvent('close'));
 };
 

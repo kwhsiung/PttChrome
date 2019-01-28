@@ -1,4 +1,5 @@
 // Parser for ANSI escape sequence
+const debug = require('debug')('js:ansi_parser.js')
 
 export function AnsiParser(termbuf) {
   this.termbuf = termbuf;
@@ -12,6 +13,9 @@ AnsiParser.STATE_CSI = 2;
 AnsiParser.STATE_C1 = 3;
 
 AnsiParser.prototype.feed = function(data) {
+  debug('feed() called somewhere, handling...')
+  debug('data:', data)
+
   var term = this.termbuf;
   if (!term)
     return;

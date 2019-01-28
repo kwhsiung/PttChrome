@@ -15,6 +15,8 @@ import PasteShortcutAlert from '../components/PasteShortcutAlert';
 import ConnectionAlert from '../components/ConnectionAlert';
 import ContextMenu from '../components/ContextMenu';
 
+const debug = require('debug')('js:pttchrome.js')
+
 function noop() {}
 
 const ANTI_IDLE_STR = '\x1b\x1b';
@@ -169,12 +171,14 @@ App.prototype.isConnected = function() {
 
 // 就是連線
 App.prototype.connect = function(url) {
+  debug('connect() called, url is:', url)
+
   this.connectState = 0;
   console.log('connect: ' + url);
 
   var parsed = this._parseURLSimple(url);
-  console.log('parsed:');
-  console.log(parsed);
+  debug('url parsed, result is:', parsed)
+
   if (parsed.protocol == 'wsstelnet') {
     this._setupWebsocketConn('wss://' + parsed.hostname + parsed.path);
   } else if (parsed.protocol == 'wstelnet') {
@@ -239,12 +243,16 @@ App.prototype._attachConn = function(conn) {
   this.conn.addEventListener('open', this.onConnect.bind(this));
   this.conn.addEventListener('close', this.onClose.bind(this));
   this.conn.addEventListener('data', function(e) {
+    debug('data event was dispatched somewhere, handling...')
+    debug('data is:', e)
     self.onData(e.detail.data);
   });
 };
 
 // 當連接上的時候
 App.prototype.onConnect = function() {
+  debug('onConnect')
+
   this.conn.isConnected = true;
 
   // 設定好 connection 給 termView，沒有很複雜，也只是提供 termView 內部可以直接從 this.conn 做 send, convSend
@@ -275,6 +283,8 @@ App.prototype.onConnect = function() {
 };
 
 App.prototype.onData = function(data) {
+  debug('onData')
+
   this.parser.feed(data);
 
   if (!this.appFocused && this.view.enableNotifications) {
@@ -293,6 +303,8 @@ App.prototype.onData = function(data) {
 };
 
 App.prototype.onClose = function() {
+  debug('onClose')
+
   console.info("pttchrome onClose");
   if (this.timerEverySec) {
     this.timerEverySec.cancel();

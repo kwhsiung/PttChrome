@@ -4,6 +4,7 @@
   "dependencies": {
     "base58": "^1.0.1",
     "classnames": "^2.2.5",
+    "debug": "^4.1.1",
     "react": "^16.2.0",
     "react-bootstrap": "^0.31.5",
     "react-dom": "^16.2.0",

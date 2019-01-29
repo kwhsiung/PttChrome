@@ -23,10 +23,15 @@ AnsiParser.prototype.feed = function(data) {
   var n = data.length;
   for (var i = 0; i < n; ++i) {
     var ch = data[i];
+    // debug('process character------------------------------')
+    // debug('character is:', ch)
+    // debug('current state is:', this.state)
+
     switch (this.state) {
     case AnsiParser.STATE_TEXT:
       switch (ch) {
       case '\x1b':
+        // debug('encouter escape character \x1b')
         if (s) {
           term.puts(s);
           s = '';

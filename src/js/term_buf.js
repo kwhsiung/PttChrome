@@ -4,6 +4,8 @@ import { Event } from './event';
 import { ColorState } from './term_ui';
 import { u2b, b2u, parseStatusRow, parseListRow } from './string_util';
 
+const debug = require('debug')('js:term_buf.js')
+
 const termColors = [
   // dark
   '#000000', // black
@@ -276,6 +278,9 @@ TermBuf.prototype = {
   },
 
   puts: function(str) {
+    debug('puts() called somewhere, handling...')
+    debug('str:', str)
+
     if (!str)
       return;
     var cols = this.cols;
